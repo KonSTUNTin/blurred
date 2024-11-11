@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLSL Shader Viewer</title>
+    <style>
+        body { margin: 0; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+            window.onload = function() {
+    // Initialize the scene
+    var time = 0;
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Create geometry (a plane)
+    var geometry = new THREE.PlaneGeometry(window.innerWidth, window.innerHeight);
+
+    // Create a basic material using the texture
+    var material = new THREE.ShaderMaterial({
+        vertexShader: document.getElementById('vertexShader').textContent,
+        fragmentShader: document.getElementById('fragmentShader').textContent,
+        uniforms: {
+            time: { value: 0 },
+            resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+        }
+    });
+
+    // Create the mesh with the geometry and material
+    var mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    // Set camera position
+    camera.position.z = 1;
+
+    // Render loop
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        time += 0.01;
+        material.uniforms.time.value = time;
+    };
+
+    // Resize logic
+    window.addEventListener('resize', function() {
+        var width = window.innerWidth;
+        var height = window.innerHeight;
+
+        // Update renderer size
+        renderer.setSize(width, height);
+
+        // Update camera aspect ratio and projection matrix
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+
+        // Update uniforms for resolution
+        material.uniforms.resolution.value.set(width, height);
+    });
+
+    animate();
+};
+
+    </script>
+      <!-- GLSL шейдеры -->
+      <script id="vertexShader" type="x-shader/x-vertex">
+
+        varying vec2 vUv;
+        void main(){
+            vUv = uv.xy;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
+        }
+    </script>
+
+    <script id="fragmentShader" type="x-shader/x-fragment">
+ 
+        precision mediump float;
+        uniform float time;
+        uniform vec2 resolution;
+        varying vec2 vUv; 
+
+        #define saturate(x) clamp(x, 0., 1.)
+        #define e 0.000001
+        
+        #define shape 0.1
+        const float PI = 3.1419;
+        const vec3 green = vec3(0.20, 0.40, 0.37);
+        const vec3 orange = vec3(0.76, 0.43, 0.15);
+
+        float rand(float n){
+            return //fract(sin(n * 13.))*.5 + abs(cos(n * 7.))*.5;
+            fract(sin(n) * 758669.5453123);
+        }
+
+
+    void main( )
+    {
+        vec2 uv = gl_FragCoord.xy / resolution.xy;
+        float d  = 3.;
+        float d_2 = d * 2.; 
+        float d_3 = d * 4.; 
+        float d_4 = d * 8.; 
+
+        vec2 g = floor(uv * d) / d;
+        vec2 g_2 = floor(uv * d_2) / d_2;
+        vec2 g_3 = floor(uv * d_3) / d_3;
+        vec2 g_4 = floor(uv * d_4) / d_4;
+
+        g_3 = mix(g_4, g_3, step(.2,rand(g_3.x)));
+        g_2 = mix(g_3, g_2, step(.5,rand(g_2.y)));
+        g = mix(g_2, g, step(.9,rand(g.x)));
+       
+        float k = resolution.x/ resolution.y;
+        uv.x -=.5;
+        uv.y = uv.y - 1. + .3 * step(k, 1.);
+       
+       
+        uv.x *= k;
+
+        float r = .65 * k / 2.;
+
+        float b = .02 * abs(cos(time / 20.)) + .05 * r;
+        float a = atan(uv.y, uv.x) + time / 10.;
+        float deform = sin(a * 7. + time) * .02 + cos(a * 3.) * .02;
+
+        float l = length(uv) ;
+        float blur = 
+            //rand(g.x) * .25 + 
+            abs(cos(time / 20. + rand(g.x) * 7. + rand(g.y) * 13.)) * .45 
+            + .4;
+
+        float line = smoothstep(r + b, (r + b) * blur, l+ deform);
+        float line_1 = smoothstep(r - b, (r - b) * blur, l);
+        float stroke = line - line_1;
+
+        float color_mix_k = 
+            abs(sin(a * .5))*.5 + 
+            smoothstep(
+                (r + b) * blur * (.8 + 2. * abs(cos(time / 30.))), 
+                (r + b) * blur , 
+                l * .9 + deform) *.5;
+        vec3 color = mix(orange, green, color_mix_k);
+        vec3 final_color = mix(vec3(0.), color, stroke);
+
+        gl_FragColor = vec4(final_color, 1.);
+        //gl_FragColor = vec4(color_mix_k);
+    }
+
+    </script>
+</body>
+</html>
