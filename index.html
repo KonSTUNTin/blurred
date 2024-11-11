@@ -147,9 +147,8 @@
                 l * .9 + deform) *.5;
         vec3 color = mix(orange, green, color_mix_k);
         vec3 final_color = mix(vec3(0.), color, stroke);
-
-        gl_FragColor = vec4(final_color, 1.);
-        //gl_FragColor = vec4(color_mix_k);
+        gl_FragColor = vec4(1., 0., 0., 1.);
+        //gl_FragColor = vec4(final_color, 1.);
     }
 
     </script>
