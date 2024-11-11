@@ -71,7 +71,6 @@
       <!-- GLSL шейдеры -->
       <script id="vertexShader" type="x-shader/x-vertex">
 
-        varying vec2 vUv;
         void main(){
             vUv = uv.xy;
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
@@ -83,19 +82,13 @@
         precision mediump float;
         uniform float time;
         uniform vec2 resolution;
-        varying vec2 vUv; 
 
-        #define saturate(x) clamp(x, 0., 1.)
-        #define e 0.000001
-        
-        #define shape 0.1
         const float PI = 3.1419;
         const vec3 green = vec3(0.20, 0.40, 0.37);
         const vec3 orange = vec3(0.76, 0.43, 0.15);
 
         float rand(float n){
-            return //fract(sin(n * 13.))*.5 + abs(cos(n * 7.))*.5;
-            fract(sin(n) * 758669.5453123);
+            return fract(sin(n) * 758669.5453123);
         }
 
 
@@ -131,7 +124,6 @@
 
         float l = length(uv) ;
         float blur = 
-            //rand(g.x) * .25 + 
             abs(cos(time / 20. + rand(g.x) * 7. + rand(g.y) * 13.)) * .45 
             + .4;
 
@@ -147,8 +139,8 @@
                 l * .9 + deform) *.5;
         vec3 color = mix(orange, green, color_mix_k);
         vec3 final_color = mix(vec3(0.), color, stroke);
-        gl_FragColor = vec4(1., 0., 0., 1.);
-        //gl_FragColor = vec4(final_color, 1.);
+        
+        gl_FragColor = vec4(final_color, 1.);
     }
 
     </script>
